@@ -42,7 +42,7 @@ RSpec.describe RubyLLM::Chat do
             # Skip vertexai as it uses OAuth, not API keys
             next if slug == :vertexai
 
-            RubyLLM.config.public_send("#{slug}_api_key=", 'invalid-key')
+            RubyLLM.config.public_send(:"#{slug}_api_key=", 'invalid-key')
           end
         end
 

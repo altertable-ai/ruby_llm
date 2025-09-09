@@ -13,20 +13,9 @@ module RubyLLM
             function: {
               name: tool.name,
               description: tool.description,
-              parameters: {
-                type: 'object',
-                properties: tool.parameters.transform_values { |param| param_schema(param) },
-                required: tool.parameters.select { |_, p| p.required }.keys
-              }
+              parameters: tool.input_schema
             }
           }
-        end
-
-        def param_schema(param)
-          {
-            type: param.type,
-            description: param.description
-          }.compact
         end
 
         def format_tool_calls(tool_calls)

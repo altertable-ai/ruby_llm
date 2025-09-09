@@ -54,11 +54,7 @@ module RubyLLM
           {
             name: tool.name,
             description: tool.description,
-            input_schema: {
-              type: 'object',
-              properties: clean_parameters(tool.parameters),
-              required: required_parameters(tool.parameters)
-            }
+            input_schema: tool.input_schema
           }
         end
 
@@ -93,7 +89,8 @@ module RubyLLM
           parameters.transform_values do |param|
             {
               type: param.type,
-              description: param.description
+              description: param.description,
+              **param.extra
             }.compact
           end
         end

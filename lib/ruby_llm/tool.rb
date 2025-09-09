@@ -3,13 +3,22 @@
 module RubyLLM
   # Parameter definition for Tool methods.
   class Parameter
-    attr_reader :name, :type, :description, :required
+    attr_reader :name, :type, :description, :required, :kwargs, :schema
 
-    def initialize(name, type: 'string', desc: nil, required: true)
+    def initialize(name, type: 'string', desc: nil, description: nil, required: true, schema: {}, **kwargs) # rubocop:disable Metrics/ParameterLists
       @name = name
       @type = type
-      @description = desc
+      @description = desc || description # support both `desc` and `description` - too confusing otherwise
       @required = required
+      @kwargs = kwargs.merge(schema)
+    end
+
+    def input_schema
+      {
+        type: type&.to_s,
+        description: description&.to_s,
+        **kwargs
+      }.compact
     end
   end
 
@@ -61,6 +70,15 @@ module RubyLLM
 
     def parameters
       self.class.parameters
+    end
+
+    def input_schema
+      {
+        type: 'object',
+        properties: parameters.transform_values(&:input_schema),
+        required: parameters.select { |_, p| p.required }.keys.map(&:to_s),
+        additionalProperties: false
+      }
     end
 
     def call(args)
