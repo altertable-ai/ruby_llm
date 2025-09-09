@@ -45,30 +45,31 @@ module RubyLLM
           {
             name: tool.name,
             description: tool.description,
-            parameters: tool.parameters.any? ? format_parameters(tool.parameters) : nil
+            parameters: tool.parameters.any? ? gemini_input_schema(tool.input_schema) : nil
           }.compact
         end
 
-        def format_parameters(parameters)
-          {
-            type: 'OBJECT',
-            properties: parameters.transform_values do |param|
-              {
-                type: param_type_for_gemini(param.type),
-                description: param.description
-              }.compact
-            end,
-            required: parameters.select { |_, p| p.required }.keys.map(&:to_s)
-          }
-        end
-
-        def param_type_for_gemini(type)
-          case type.to_s.downcase
-          when 'integer', 'number', 'float' then 'NUMBER'
-          when 'boolean' then 'BOOLEAN'
-          when 'array' then 'ARRAY'
-          when 'object' then 'OBJECT'
-          else 'STRING'
+        # FIXME: this should rely on the samed code than `convert_schema_to_gemini`
+        def gemini_input_schema(schema)
+          case schema
+          when Hash
+            schema.each do |key, value|
+              if key == :type
+                schema[:type] = case value.to_s.downcase
+                                when 'integer', 'number', 'float' then 'NUMBER'
+                                when 'boolean' then 'BOOLEAN'
+                                when 'array' then 'ARRAY'
+                                when 'object' then 'OBJECT'
+                                else 'STRING'
+                                end
+              else
+                schema[key] = gemini_input_schema(value)
+              end
+            end
+          when Array
+            schema.each { |item| gemini_input_schema(item) }
+          else
+            schema
           end
         end
       end
